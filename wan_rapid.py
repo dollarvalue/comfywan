@@ -72,7 +72,11 @@ image = (
 app = modal.App(name="comfy-wan-rapid", image=image)
 
 
-@app.function(volumes={VOLUME_DATA_PATH: volume}, timeout=1800)
+@app.function(
+    volumes={VOLUME_DATA_PATH: volume},
+    timeout=1800,
+    secrets=[modal.Secret.from_name("huggingface-secret")],
+)
 def download_model():
     """
     Downloads the model from Hugging Face Hub into the persistent volume.
@@ -83,12 +87,12 @@ def download_model():
     # Ensure the target directory exists in the volume
     os.makedirs(VOLUME_CHECKPOINTS_PATH, exist_ok=True)
 
-    print(f"Downloading {MODEL_FILENAME} to {VOLUME_CHECKPOINTS_PATH}...")
+    print(f"Downloading {MODEL_BASE_NAME} to {VOLUME_CHECKPOINTS_PATH}...")
     hf_hub_download(
         repo_id=MODEL_REPO_ID,
-        filename=MODEL_FILENAME,
-        local_dir=VOLUME_CHECKPOINTS_PATH,
-        local_dir_use_symlinks=False,  # Download the file, don't symlink to cache
+        filename=MODEL_BASE_NAME,
+        subfolder="Mega-v12",
+        local_dir=VOLUME_CHECKPOINTS_PATH  # Download the file, don't symlink to cache
     )
     print("Download complete. Committing to volume.")
     volume.commit()
@@ -100,7 +104,7 @@ def download_model():
     timeout=3600,
     # Allow the container to stay up for 5 minutes after the last request
     # to keep the session warm for interactive use.
-    container_idle_timeout=300,
+    scaledown_window=300,
 )
 @modal.web_server(8100, startup_timeout=600)
 def serve_comfy():
