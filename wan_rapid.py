@@ -106,7 +106,7 @@ def download_model():
     # to keep the session warm for interactive use.
     scaledown_window=300,
 )
-@modal.web_server(8100, startup_timeout=600)
+@modal.web_server(8100, startup_timeout=600, requires_proxy_auth=True)
 def serve_comfy():
     """
     Serves the ComfyUI web interface, with input/output and models
